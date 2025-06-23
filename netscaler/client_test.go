@@ -21,11 +21,11 @@ func (m *MockNitroClient) Login() error {
 	return m.loginErr
 }
 
-func (m *MockNitroClient) FindAllResources(resourceType string) ([]map[string]any, error) {
+func (m *MockNitroClient) FindAllResources(_ string) ([]map[string]any, error) {
 	return m.allCerts, m.findAllErr
 }
 
-func (m *MockNitroClient) FindResource(resourceType string, name string) (map[string]any, error) {
+func (m *MockNitroClient) FindResource(_, _ string) (map[string]any, error) {
 	return m.cert, m.findErr
 }
 

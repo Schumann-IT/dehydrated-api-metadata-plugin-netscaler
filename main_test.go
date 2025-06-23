@@ -25,7 +25,7 @@ func (m *MockClient) GetAllCertificates() ([]map[string]any, error) {
 	return args.Get(0).([]map[string]any), args.Error(1)
 }
 
-func mockClientFactory(prefix string, config *netscaler.ClientConfig) (*netscaler.Client, error) {
+func mockClientFactory(_ string, _ *netscaler.ClientConfig) (*netscaler.Client, error) {
 	return &netscaler.Client{}, nil
 }
 
