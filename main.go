@@ -27,9 +27,10 @@ var (
 // NetscalerPlugin is a simple plugin implementation
 type NetscalerPlugin struct {
 	proto.UnimplementedPluginServer
-	logger  hclog.Logger
-	config  *proto.PluginConfig
-	clients map[string]*netscaler.Client
+	logger        hclog.Logger
+	config        *proto.PluginConfig
+	clients       map[string]*netscaler.Client
+	clientFactory func(prefix string, config *netscaler.ClientConfig) (*netscaler.Client, error)
 }
 
 // Initialize implements the plugin.Plugin interface
@@ -48,7 +49,7 @@ func (p *NetscalerPlugin) Initialize(_ context.Context, req *proto.InitializeReq
 	}
 
 	for env, value := range environments {
-		log.Printf("Processing environment %s", env)
+		log.Printf("Creating client for environment %s", env)
 		cfg, err := netscaler.NewConfig(value)
 		if err != nil {
 			log.Printf("Invalid Config format for environment %s: %s", env, err.Error())
@@ -86,7 +87,11 @@ func (p *NetscalerPlugin) Initialize(_ context.Context, req *proto.InitializeReq
 			Headers:   make(map[string]string),
 		}
 
-		client, err := netscaler.NewClient(cfg.Prefix, clientConfig)
+		factory := p.clientFactory
+		if factory == nil {
+			factory = netscaler.NewClient
+		}
+		client, err := factory(cfg.Prefix, clientConfig)
 		if err != nil {
 			log.Printf("Failed to create Netscaler client for environment %s: %v", env, err)
 			return nil, fmt.Errorf("failed to create Netscaler client for environment %s: %w", env, err)
