@@ -5,7 +5,7 @@ GOCLEAN=$(GOCMD) clean
 GOTEST=$(GOCMD) test
 GOGET=$(GOCMD) get
 GOMOD=$(GOCMD) mod
-BINARY_NAME=openssl-plugin
+BINARY_NAME=dehydrated-api-metadata-plugin-netscaler
 
 .PHONY: all build clean test deps tidy test-integration test-all
 
@@ -57,8 +57,8 @@ help:
 	@echo "  fmt            - Format code"
 	@echo ""
 	@echo "Integration Test Environment Variables:"
-	@echo "  NETSCALER_ENDPOINT  - Netscaler endpoint URL (default: https://localhost)"
-	@echo "  NETSCALER_USERNAME  - Netscaler username (default: nsroot)"
-	@echo "  NETSCALER_PASSWORD  - Netscaler password (default: nsroot)"
+	@echo "  NETSCALER_ENDPOINT  - Netscaler endpoint URL"
+	@echo "  NETSCALER_USERNAME  - Netscaler username"
+	@echo "  NETSCALER_PASSWORD  - Netscaler password"
 	@echo "  NETSCALER_PREFIX    - Certificate prefix (default: test-)"
 	@echo "  NETSCALER_SSL_VERIFY - Enable SSL verification (default: false)"

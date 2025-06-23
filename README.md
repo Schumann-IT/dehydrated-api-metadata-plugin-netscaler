@@ -1,44 +1,35 @@
 # Dehydrated API Metadata Plugin for Netscaler
 
-A plugin for the Dehydrated API that provides metadata extraction and analysis capabilities for SSL/TLS certificates and private keys using OpenSSL.
+A plugin for the Dehydrated API that provides metadata extraction and management capabilities for SSL/TLS certificates stored in Citrix Netscaler/ADC appliances.
 
 ## Overview
 
-This plugin extends the Dehydrated API functionality by providing detailed metadata about SSL/TLS certificates and private keys. It analyzes certificate files and private keys to extract important information such as:
-
-- Certificate metadata (subject, issuer, validity periods)
-- Private key information (type, size)
-- Certificate chain analysis
+This plugin extends the Dehydrated API functionality by providing integration with Citrix Netscaler/ADC appliances for certificate management. It allows you to retrieve and manage SSL/TLS certificates stored in Netscaler instances, supporting multiple environments with different configurations.
 
 ## Features
 
-- Extracts metadata from various certificate files:
-  - Private keys (`privkey.pem`)
-  - Certificates (`cert.pem`)
-  - Certificate chains (`chain.pem`)
-  - Full certificate chains (`fullchain.pem`)
-- Supports multiple key types:
-  - RSA
-  - ECDSA
-  - Ed25519
-- Provides detailed certificate information:
-  - Subject DN
-  - Issuer DN
-  - Validity periods
-  - Key type and size
-- Error handling and reporting for invalid or corrupted files
+- **Multi-environment support**: Configure and manage certificates across multiple Netscaler environments (dev, staging, prod, etc.)
+- **Certificate retrieval**: Get all certificates or specific certificates by name
+- **Prefix-based filtering**: Use environment-specific prefixes to organize and filter certificates
+- **Secure authentication**: Supports username/password authentication with SSL verification options
+- **Error handling**: Comprehensive error handling and reporting for connection and API issues
+- **Integration ready**: Implements the Dehydrated API plugin interface for seamless integration
 
 ## Requirements
 
-- Go 1.x
-- OpenSSL
-- Dehydrated API Go client
+- Go 1.24 or later
+- Citrix Netscaler/ADC appliance
+- Network access to Netscaler instance
+- Valid Netscaler credentials
 
 ## Installation
 
+### From Source
+
 1. Clone the repository:
    ```bash
-   git clone https://github.com/schumann-it/dehydrated-api-metadata-plugin-openssl.git
+   git clone https://github.com/schumann-it/dehydrated-api-metadata-plugin-netscaler.git
+   cd dehydrated-api-metadata-plugin-netscaler
    ```
 
 2. Install dependencies:
@@ -48,22 +39,98 @@ This plugin extends the Dehydrated API functionality by providing detailed metad
 
 3. Build the plugin:
    ```bash
-   go build
+   go build -o dehydrated-api-metadata-plugin-netscaler .
    ```
+
+### From Releases
+
+Download the latest release for your platform from the [Releases page](https://github.com/schumann-it/dehydrated-api-metadata-plugin-netscaler/releases).
+
+## Configuration
+
+The plugin supports configuration for multiple environments. Each environment requires the following configuration:
+
+```json
+{
+  "environments": {
+    "dev": {
+      "endpoint": "https://netscaler-dev.example.com",
+      "username": "admin",
+      "password": "your-password",
+      "prefix": "dev-",
+      "sslVerify": false
+    },
+    "prod": {
+      "endpoint": "https://netscaler-prod.example.com",
+      "username": "admin",
+      "password": "your-password",
+      "prefix": "prod-",
+      "sslVerify": true
+    }
+  }
+}
+```
+
+### Configuration Parameters
+
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `endpoint` | Yes | The Netscaler API endpoint URL (e.g., `https://netscaler.example.com`) |
+| `username` | Yes | Netscaler admin username |
+| `password` | Yes | Netscaler admin password |
+| `prefix` | No | Prefix for certificate names (e.g., `dev-`, `prod-`) |
+| `sslVerify` | No | Whether to verify SSL certificates (default: `false`) |
 
 ## Usage
 
 The plugin implements the Dehydrated API plugin interface and provides the following functionality:
 
-1. **Initialize**: Sets up the plugin with configuration
-2. **GetMetadata**: Analyzes certificate files and returns metadata
-3. **Close**: Handles plugin cleanup
+### Plugin Methods
 
-The plugin processes the following files in the domain directory:
-- `privkey.pem`: Private key file
-- `cert.pem`: Certificate file
-- `chain.pem`: Certificate chain file
-- `fullchain.pem`: Full certificate chain file
+1. **Initialize**: Sets up the plugin with configuration for multiple environments
+2. **GetMetadata**: Returns plugin metadata and capabilities
+3. **Close**: Handles plugin cleanup and resource release
+
+### Netscaler Client Methods
+
+The plugin provides a Netscaler client with the following methods:
+
+- `GetAllCertificates()`: Retrieves all certificates for the configured environment
+- `GetCertificate(name)`: Retrieves a specific certificate by name
+
+### Example Usage
+
+```go
+// Initialize the plugin with configuration
+config := `{
+  "environments": {
+    "dev": {
+      "endpoint": "https://netscaler-dev.example.com",
+      "username": "admin",
+      "password": "password",
+      "prefix": "dev-"
+    }
+  }
+}`
+
+plugin := &NetscalerPlugin{}
+err := plugin.Initialize(config)
+if err != nil {
+    log.Fatal(err)
+}
+
+// Get all certificates
+certificates, err := plugin.GetAllCertificates("dev")
+if err != nil {
+    log.Fatal(err)
+}
+
+// Get a specific certificate
+cert, err := plugin.GetCertificate("dev", "example.com")
+if err != nil {
+    log.Fatal(err)
+}
+```
 
 ## Testing
 
@@ -134,15 +201,30 @@ The project structure is organized as follows:
 
 ```
 .
-├── main.go           # Main plugin implementation
-├── netscaler/        # Netscaler client package
-│   ├── client.go     # Netscaler client implementation
-│   ├── client_test.go # Unit tests for client
-│   ├── config.go     # Configuration handling
-│   ├── config_test.go # Unit tests for config
-│   └── integration_test.go # Integration tests
-├── go.mod           # Go module definition
-└── go.sum           # Go module checksums
+├── main.go                    # Main plugin implementation
+├── netscaler/                 # Netscaler client package
+│   ├── client.go              # Netscaler client implementation
+│   ├── client_test.go         # Unit tests for client
+│   ├── config.go              # Configuration handling
+│   ├── config_test.go         # Unit tests for config
+│   └── integration_test.go    # Integration tests
+├── go.mod                     # Go module definition
+├── go.sum                     # Go module checksums
+├── .goreleaser.yml            # GoReleaser configuration
+├── Makefile                   # Build and test automation
+└── README.md                  # This file
+```
+
+### Building for Different Platforms
+
+The project uses GoReleaser for building releases across multiple platforms:
+
+```bash
+# Build for current platform
+go build
+
+# Build for all platforms (requires GoReleaser)
+goreleaser build --snapshot --clean
 ```
 
 ## License
@@ -151,8 +233,26 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Contributing
 
-[Add contribution guidelines here]
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+### Development Guidelines
+
+- Write tests for new functionality
+- Ensure all tests pass before submitting PRs
+- Follow Go coding conventions
+- Update documentation as needed
 
 ## Author
 
-Jan Schumann 
+Jan Schumann
+
+## Support
+
+For issues and questions:
+- Create an issue on GitHub
+- Check the existing issues for similar problems
+- Review the integration test examples for usage patterns 
