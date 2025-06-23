@@ -253,6 +253,12 @@ Jan Schumann
 ## Support
 
 For issues and questions:
-- Create an issue on GitHub
+
+- Create an issue on [GitHub](https://github.com/schumann-it/dehydrated-api-metadata-plugin-netscaler/issues)
 - Check the existing issues for similar problems
-- Review the integration test examples for usage patterns 
+- Review the test examples for usage patterns
+
+## Related Projects
+
+- [Dehydrated API](https://github.com/schumann-it/dehydrated-api-go) - The core API
+- [OpenSSL Plugin](https://github.com/Schumann-IT/dehydrated-api-metadata-plugin-openssl) - Similar plugin for OpenSSL integration 
