@@ -7,7 +7,7 @@ toolchain go1.24.2
 require (
 	github.com/citrix/adc-nitro-go v0.0.0-20241114071000-5fec5a6364f2
 	github.com/hashicorp/go-hclog v1.6.3
-	github.com/schumann-it/dehydrated-api-go v0.0.15
+	github.com/schumann-it/dehydrated-api-go v0.1.0
 	github.com/stretchr/testify v1.10.0
 )
 
