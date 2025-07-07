@@ -4,13 +4,10 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
-	"os"
-	"strings"
-
 	"github.com/hashicorp/go-hclog"
 	"github.com/schumann-it/dehydrated-api-go/plugin/proto"
 	"github.com/schumann-it/dehydrated-api-go/plugin/server"
+	"os"
 
 	"github.com/schumann-it/dehydrated-api-metadata-plugin-netscaler/netscaler"
 )
@@ -44,32 +41,26 @@ func (p *NetscalerPlugin) Initialize(_ context.Context, req *proto.InitializeReq
 	envConfigs := make(envConfig)
 	environments, err := p.config.GetMap("environments")
 	if err != nil {
-		log.Printf("Invalid Config format for environment: %s", err.Error())
-		return nil, fmt.Errorf("invalid Config format for environment: %s", err.Error())
+		return nil, fmt.Errorf("invalid config format: %s", err.Error())
 	}
 
 	for env, value := range environments {
-		log.Printf("Creating client for environment %s", env)
+		p.logger.Debug("Creating client", "environment", env)
 		cfg, err := netscaler.NewConfig(value)
 		if err != nil {
-			log.Printf("Invalid Config format for environment %s: %s", env, err.Error())
 			return nil, fmt.Errorf("invalid Config format for environment %s: %w", env, err)
 		}
 
-		log.Printf("Config for %s: endpoint=%s, username=%s, prefix=%s, sslVerify=%v",
-			env, cfg.Endpoint, cfg.Username, cfg.Prefix, cfg.SslVerify)
+		p.logger.Debug("Config", "environment", env, "endpoint", cfg.Endpoint, "username", cfg.Username, "prefix", cfg.Prefix, "sslverify", cfg.SslVerify)
 
 		// Validate required fields
 		if cfg.Endpoint == "" {
-			log.Printf("Missing required field 'endpoint' for environment %s", env)
 			return nil, fmt.Errorf("missing required field 'endpoint' for environment %s", env)
 		}
 		if cfg.Username == "" {
-			log.Printf("Missing required field 'username' for environment %s", env)
 			return nil, fmt.Errorf("missing required field 'username' for environment %s", env)
 		}
 		if cfg.Password == "" {
-			log.Printf("Missing required field 'password' for environment %s", env)
 			return nil, fmt.Errorf("missing required field 'password' for environment %s", env)
 		}
 
@@ -78,7 +69,7 @@ func (p *NetscalerPlugin) Initialize(_ context.Context, req *proto.InitializeReq
 
 	// Create Netscaler clients for each environment
 	for env, cfg := range envConfigs {
-		log.Printf("Creating Netscaler client for environment %s", env)
+		p.logger.Debug("Creating Netscaler client", "environment", env)
 		clientConfig := &netscaler.ClientConfig{
 			Endpoint:  cfg.Endpoint,
 			Username:  cfg.Username,
@@ -93,10 +84,8 @@ func (p *NetscalerPlugin) Initialize(_ context.Context, req *proto.InitializeReq
 		}
 		client, err := factory(cfg.Prefix, clientConfig)
 		if err != nil {
-			log.Printf("Failed to create Netscaler client for environment %s: %v", env, err)
 			return nil, fmt.Errorf("failed to create Netscaler client for environment %s: %w", env, err)
 		}
-		log.Printf("Successfully created Netscaler client for environment %s", env)
 		p.clients[env] = client
 	}
 
@@ -110,22 +99,19 @@ func (p *NetscalerPlugin) GetMetadata(_ context.Context, req *proto.GetMetadataR
 	// Create a new Metadata for the response
 	metadata := proto.NewMetadata()
 
-	var errs []string
 	for env, client := range p.clients {
-		m, err := client.GetCertificate(req.GetDomainEntry().GetDomain())
-		if err != nil {
-			errs = append(errs, fmt.Sprintf("failed to get metadata for environment %s: %s", env, err.Error()))
-			continue
+		name := req.GetDomainEntry().GetDomain()
+		if req.DomainEntry.GetAlias() != "" {
+			name = req.DomainEntry.GetAlias()
 		}
-		err = metadata.SetMap(env, m)
+		cert, err := client.GetCertificate(name)
 		if err != nil {
-			errs = append(errs, fmt.Sprintf("failed to convert metadata for environment %s: %v", env, err.Error()))
+			cert = map[string]any{
+				"error": fmt.Sprintf("failed to retrieve certificate for domain %s: %v", req.GetDomainEntry().GetDomain(), err),
+			}
 		}
-	}
 
-	// Add errors to metadata if any occurred
-	if len(errs) > 0 {
-		metadata.SetError(strings.Join(errs, "; "))
+		_ = metadata.SetMap(env, cert)
 	}
 
 	return metadata.ToGetMetadataResponse()
@@ -148,9 +134,10 @@ func main() {
 	}
 
 	logger := hclog.New(&hclog.LoggerOptions{
-		Name:   "netscaler-plugin",
-		Level:  hclog.Trace,
-		Output: os.Stdout,
+		Name:       "netscaler-plugin",
+		Level:      hclog.Trace,
+		Output:     os.Stderr,
+		JSONFormat: true,
 	})
 
 	plugin := &NetscalerPlugin{
