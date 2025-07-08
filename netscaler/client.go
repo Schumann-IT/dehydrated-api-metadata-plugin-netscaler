@@ -36,7 +36,7 @@ func NewClient(prefix string, config *ClientConfig) (*Client, error) {
 		Url:       config.Endpoint,
 		Username:  config.Username,
 		Password:  config.Password,
-		SslVerify: false,
+		SslVerify: config.SslVerify,
 		Headers:   config.Headers,
 	})
 	if err != nil {

@@ -4,10 +4,11 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"os"
+
 	"github.com/hashicorp/go-hclog"
 	"github.com/schumann-it/dehydrated-api-go/plugin/proto"
 	"github.com/schumann-it/dehydrated-api-go/plugin/server"
-	"os"
 
 	"github.com/schumann-it/dehydrated-api-metadata-plugin-netscaler/netscaler"
 )
@@ -51,7 +52,12 @@ func (p *NetscalerPlugin) Initialize(_ context.Context, req *proto.InitializeReq
 			return nil, fmt.Errorf("invalid Config format for environment %s: %w", env, err)
 		}
 
-		p.logger.Debug("Config", "environment", env, "endpoint", cfg.Endpoint, "username", cfg.Username, "prefix", cfg.Prefix, "sslverify", cfg.SslVerify)
+		p.logger.Debug("Config",
+			"environment", env,
+			"endpoint", cfg.Endpoint,
+			"username", cfg.Username,
+			"prefix", cfg.Prefix,
+			"sslverify", cfg.SslVerify)
 
 		// Validate required fields
 		if cfg.Endpoint == "" {

@@ -36,7 +36,10 @@ tidy: ## Tidy up dependencies
 .PHONY: lint fmt
 
 lint: ## Run linter
-	golangci-lint run
+	@golangci-lint run
+
+lint-fix: ## Run linter (and fix issues if possible)
+	@golangci-lint run --fix
 
 fmt: ## Format the code
 	$(GOCMD) fmt ./...
