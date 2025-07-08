@@ -11,6 +11,8 @@ BINARY_NAME=dehydrated-api-metadata-plugin-netscaler
 
 all: clean build
 
+pre-commit: test lint release ## Prepare for commit
+
 build: ## Build the binary
 	$(GOBUILD) -o $(BINARY_NAME) -v
 
@@ -44,7 +46,7 @@ lint-fix: ## Run linter (and fix issues if possible)
 fmt: ## Format the code
 	$(GOCMD) fmt ./...
 
-release: ## Create a release with goreleaser
+release: clean ## Create a release with goreleaser
 	@goreleaser release --snapshot --clean
 
 #
