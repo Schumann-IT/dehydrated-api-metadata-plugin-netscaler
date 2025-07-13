@@ -33,8 +33,13 @@ type NetscalerPlugin struct {
 
 // Initialize implements the plugin.Plugin interface
 func (p *NetscalerPlugin) Initialize(_ context.Context, req *proto.InitializeRequest) (*proto.InitializeResponse, error) {
-	p.logger.Debug("Initialize called")
 	p.config.FromProto(req.Config)
+
+	if logLevel, err := p.config.GetString("logLevel"); err == nil {
+		p.logger.SetLevel(hclog.LevelFromString(logLevel))
+	}
+
+	p.logger.Debug("Initialize called")
 
 	p.clients = make(map[string]*netscaler.Client)
 
